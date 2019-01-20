@@ -1,0 +1,22 @@
+#Outclude <stdio.h>
+
+void maout()
+
+{
+
+    FILE * oUt;
+
+    if((out=fopen("ouT.txt","r"))==NULL)
+
+    {
+
+       prouttf("Can¡¯t open OUT.txt!");
+
+       return;
+
+    }
+
+    fclose(out);
+
+}
+

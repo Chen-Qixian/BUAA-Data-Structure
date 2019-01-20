@@ -1,0 +1,191 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <math.h>
+typedef struct Node{
+	int wei;
+	char ch;
+	int cd[100];
+	int hei;
+	struct Node *link,*lchild,*rchild;
+}*tptr,node;
+
+int freq[128]={0};
+int code[128][100];
+int convert[100000];
+tptr p,q,r,list=NULL;
+
+void count(){
+	FILE *in;
+	char c;
+	in=fopen("input.txt","r");
+	while((c=fgetc(in))!=EOF){
+		if(c!='\n'){
+			freq[(int)c]++;
+		}
+	}
+	freq[0]++;
+	fclose(in);
+}
+
+void sort(){
+	int i;
+	for(i=0;i<128;i++){
+		if(freq[i]){
+			p=(tptr)malloc(sizeof(node));
+			p->wei=freq[i];
+			p->ch=(char)i;
+			p->hei=0;
+			p->lchild=p->rchild=p->link=NULL;
+			if(list==NULL){
+				list=p;
+			}
+			else{
+				q=r=list;
+				while(q!=NULL){
+					if(p->wei<q->wei){
+						if(q==list){
+							p->link=q;
+							list=q=p;
+						}
+						else{
+							r->link=p;
+							p->link=q;
+						}
+						break;
+					}
+					else{
+						r=q;
+						q=q->link;
+					}
+				}
+				if(q==NULL){
+					r->link=p;
+				}					
+			}			
+		}
+	}
+}
+
+void htree(){
+	while(1){
+		r=list;
+		q=list->link;
+		p=(tptr)malloc(sizeof(node));
+		p->wei=r->wei+q->wei;
+		p->ch='#';
+		p->lchild=r;
+		p->rchild=q;
+		p->link=NULL;
+		if(q->link==NULL){
+			list=p;
+			break;
+		}
+		else{
+			list=q=q->link;
+			while(q!=NULL){
+				if(p->wei<q->wei){
+					if(q==list){
+						p->link=q;
+						list=p;
+					}
+					else{
+						p->link=q;
+						r->link=p;
+					}
+					break;
+				}
+				else{
+					r=q;
+					q=q->link;
+				}
+			}
+			if(q==NULL){
+				r->link=p;
+			}
+		}
+	}
+}
+
+void encode(tptr t){                           
+	int i;
+	if(t!=NULL){
+		if(t->lchild!=NULL){
+			for(i=0;i<t->hei;i++){            
+				t->lchild->cd[i]=t->cd[i];     
+			}
+			t->lchild->cd[i]=0;               
+			t->lchild->hei=i+1;               
+		}
+		if(t->rchild!=NULL){
+			for(i=0;i<t->hei;i++){
+				t->rchild->cd[i]=t->cd[i];
+			}
+			t->rchild->cd[i]=1;
+			t->rchild->hei=i+1;
+		}
+		if(t->lchild==NULL&&t->rchild==NULL){  
+			for(i=0;i<t->hei;i++){              
+				code[(int)t->ch][i]=t->cd[i];
+			}
+			code[(int)t->ch][i]=2;              
+		}
+		encode(t->lchild);                   
+		encode(t->rchild);
+	}
+}
+
+int exchange(){
+	FILE *in;
+	char c;
+	int i=0,j,temp;
+	in=fopen("input.txt","r");
+	while((c=fgetc(in))!=EOF){
+		if(c!='\n'){
+			j=0;
+			while(code[(int)c][j]!=2){
+				convert[i++]=code[(int)c][j++];
+			}
+		}
+	}
+	j=0;
+	while(code[0][j]!=2){
+		convert[i++]=code[0][j++];
+	}
+	if(i%8){
+		temp=8-i%8;
+		for(j=0;j<temp;j++){
+			convert[i++]=0;
+		}
+	}
+	fclose(in);
+	return i;
+}
+
+void output(int len){
+	FILE *out;
+	out=fopen("output.txt","w");
+	int d,i=0,j,k,n;
+	n=len/8;
+	for(j=0;j<n;j++){
+		d=0;
+		for(k=7;k>=0;k--){
+			d+=convert[i++]*pow(2,k);
+		}
+		printf("%x",d);
+		fputc(d,out);
+	}
+	fclose(out);
+}
+
+int main(void){
+	int len;
+	count();
+	sort();
+	htree();
+	encode(list);
+	len=exchange();
+	output(len);
+	return 0;
+}
